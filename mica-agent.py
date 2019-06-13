@@ -64,6 +64,7 @@ MICA_SERVER_API = "{}/api/v{}/attack".format(MICA_SERVER_URL, API_VERSION)
 
 # create a list of running jobs
 running_jobs = []
+waiting_jobs = []
 
 
 # add a new job to the job list
@@ -74,6 +75,13 @@ def _add_new_job(uuid):
 # remove a job from the job list
 def _delete_job(uuid):
     running_jobs.remove("{}".format(uuid))
+
+
+def _add_waiting_job(uuid):
+    waiting_jobs.append("{}".format(uuid))
+
+def _delete_job_from_waiting(uuid):
+    waiting_jobs.remove("{}".format(uuid))
 
 
 # gets a docker run command and adds a name to it
@@ -185,6 +193,14 @@ while True:
 
     # try to get a new job
     try:
+        # check if a waiting job was executed right now
+        for job_uuid in waiting_jobs:
+            is_running = _job_is_running(job_uuid)
+            log("Job {} is {}".format(job_uuid, 'running' if is_running else 'waiting'))
+            if is_running:
+                _delete_job_from_waiting(job_uuid)
+                _add_new_job(job_uuid)
+
         # each time check the running jobs
         for job_uuid in running_jobs:
             is_running = _job_is_running(job_uuid)
@@ -210,7 +226,7 @@ while True:
             # is it a docker run command - if so, then add a name = uuid
             if "docker run" in cmd:
                 cmd = _add_name_to_docker_command(cmd, uuid)
-                _add_new_job(uuid)
+                _add_waiting_job(uuid)
                 log("Start new docker job {}".format(uuid))
 
             # check for an empty cmd string
