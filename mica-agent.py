@@ -44,7 +44,7 @@ POLLING_DELAY = 5
 
 # get arguments which can be given
 parser = argparse.ArgumentParser()
-parser.add_argument('-b', '--backend', action='store_const',
+parser.add_argument('-b', '--backend', action='store',
     help='The host address of the backend server e.g. http://127.0.0.1')
 parser.add_argument('-l', '--logging', action='store_true',
     help='Setting the logging to a local logfile')
