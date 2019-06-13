@@ -51,8 +51,7 @@ parser.add_argument('-l', '--logging', action='store_true',
 args = parser.parse_args()
 if args.backend:
     MICA_SERVER_URL = str(args.backend)
-if args.logging:
-    LOGGING = args.logging
+LOGGING = args.logging
 
 
 # auto configure the hostname
