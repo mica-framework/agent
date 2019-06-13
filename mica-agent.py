@@ -24,6 +24,7 @@ import socket
 import time
 import os
 import docker
+import argparse
 
 # ===================== CONFIG STARTS HERE ===========================
 
@@ -40,6 +41,19 @@ HOSTNAME = "LOCALHOST"
 POLLING_DELAY = 5
 
 # ===================== CONFIG ENDS HERE ===========================
+
+# get arguments which can be given
+parser = argparse.ArgumentParser()
+parser.add_argument('-b', '--backend', action='store_const',
+    help='The host address of the backend server e.g. http://127.0.0.1')
+parser.add_argument('-l', '--logging', action='store_true',
+    help='Setting the logging to a local logfile')
+args = parser.parse_args()
+if args.backend:
+    MICA_SERVER_URL = str(args.backend)
+if args.logging:
+    LOGGING = args.logging
+
 
 # auto configure the hostname
 host = socket.gethostname()
@@ -146,13 +160,13 @@ def _job_is_running(uuid):
 
 
 # logging of the agent
-def log(message, print_to_console=True, write_to_file=False):
+def log(message, print_to_console=True):
     # check if we should print the log message
     if print_to_console:
         print(message)
 
     # check if we should write the logs to a file
-    if write_to_file:
+    if LOGGING:
         with open('./process.log', 'a') as logfile:
             logfile.write(message + "\n")
 
