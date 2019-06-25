@@ -50,7 +50,7 @@ respect to the naming conventions of this project.
 
 
 ## License
-This project is licensed under the terms of the MIT license. See the [LICENSE](https://raw.githubusercontent.com/mica-framework/server/master/LICENSE) file.
+This project is licensed under the terms of the MIT license. See the [LICENSE](https://raw.githubusercontent.com/mica-framework/agent/master/LICENSE) file.
 
 ## Contribution
 If you like to contribute, don't hesitate to contact me or create a pull request or issue!
