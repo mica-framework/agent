@@ -159,7 +159,7 @@ def _job_is_running(uuid):
     log("Start checking if job is running")
     docker_client = docker.from_env()
     docker_client.containers.prune()
-    running_container = docker_client.containers.list({"name": uuid})
+    running_container = docker_client.containers.list(filter={"name": uuid})
     if len(running_container) > 0:
         return True
     else:
