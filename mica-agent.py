@@ -25,11 +25,12 @@ import time
 import os
 import docker
 import argparse
+import yaml
 
 # ===================== CONFIG STARTS HERE ===========================
 
 # the MiCA-API Version
-API_VERSION = "1"
+API_VERSION = "v1"
 
 # is needed! within the laboratory, it is the IM-SEC-001 for now
 MICA_SERVER_URL = "localhost" # e.g. http://127.0.0.1
@@ -42,16 +43,49 @@ POLLING_DELAY = 5
 
 # ===================== CONFIG ENDS HERE ===========================
 
+
+# if there are no arguments given, then just check if there's a config file
+def _load_config():
+    try:
+        with open("./config.yml", 'r') as ymlfile:
+            yml = yaml.safe_load(ymlfile)
+    except Exception as err:
+        return None
+    return yml
+
+
 # get arguments which can be given
 parser = argparse.ArgumentParser()
 parser.add_argument('-b', '--backend', action='store',
     help='The host address of the backend server e.g. http://127.0.0.1')
 parser.add_argument('-l', '--logging', action='store_true',
     help='Setting the logging to a local logfile')
+parser.add_argument('-v', '--version', action='store',
+    help='Setting API Version - Default Version is v1')
 args = parser.parse_args()
+
+
+# now set the environment variables
+## setting backend
 if args.backend:
     MICA_SERVER_URL = str(args.backend)
+else:
+    config = _load_config()
+    if config['server']['host']:
+        MICA_SERVER_URL = str(config['server']['host'])
+
+
+## setting logging
 LOGGING = args.logging
+
+
+## setting api version
+if args.version:
+    API_VERSION = str(args.version)
+else:
+    config = _load_config()
+    if config['api_version']:
+        API_VERSION = str(config['api_version'])
 
 
 # auto configure the hostname
@@ -59,7 +93,7 @@ host = socket.gethostname()
 if host is not None:
     HOSTNAME = str(host).upper()
 
-MICA_SERVER_API = "{}/api/v{}/attack".format(MICA_SERVER_URL, API_VERSION)
+MICA_SERVER_API = "{}/api/{}/attack".format(MICA_SERVER_URL, API_VERSION)
 
 # create a list of running jobs
 running_jobs = []
