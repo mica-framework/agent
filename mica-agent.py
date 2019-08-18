@@ -15,7 +15,6 @@
 # Andreas Zinkl
 # E-Mail: zinklandi@gmail.com
 # ================================================
-from sys import platform
 import sys
 import subprocess
 import shlex
@@ -25,11 +24,12 @@ import time
 import os
 import docker
 import argparse
+import yaml
 
 # ===================== CONFIG STARTS HERE ===========================
 
 # the MiCA-API Version
-API_VERSION = "1"
+API_VERSION = "v1"
 
 # is needed! within the laboratory, it is the IM-SEC-001 for now
 MICA_SERVER_URL = "localhost" # e.g. http://127.0.0.1
@@ -40,18 +40,67 @@ HOSTNAME = "LOCALHOST"
 # Request-Delay
 POLLING_DELAY = 5
 
+# Path to the config file
+CONFIG_FILE_PATH = "./config.yml"
+
+# logging to logfile
+LOGGING = False
+
 # ===================== CONFIG ENDS HERE ===========================
+
+
+# if there are no arguments given, then just check if there's a config file
+def _load_config():
+    try:
+        with open(CONFIG_FILE_PATH, 'r') as ymlfile:
+            yml = yaml.safe_load(ymlfile)
+    except Exception as err:
+        return None
+    return yml
+
 
 # get arguments which can be given
 parser = argparse.ArgumentParser()
-parser.add_argument('-b', '--backend', action='store',
+parser.add_argument('-b', '--backend', action='store', default=None,
     help='The host address of the backend server e.g. http://127.0.0.1')
-parser.add_argument('-l', '--logging', action='store_true',
+parser.add_argument('-l', '--logging', action='store_true', default=False,
     help='Setting the logging to a local logfile')
+parser.add_argument('-v', '--version', action='store', default=None,
+    help='Setting API Version - Default Version is v1')
+parser.add_argument('-f', '--file', action='store', default=None,
+    help='The file path to the configuration config.yml file')
 args = parser.parse_args()
+
+
+# now set the environment variables
+## check for a given config file
+config = None
+if args.file:
+    CONFIG_FILE_PATH = args.file
+config = _load_config()
+
+## setting backend
 if args.backend:
     MICA_SERVER_URL = str(args.backend)
-LOGGING = args.logging
+elif config:
+    if config['server']['host']:
+        MICA_SERVER_URL = str(config['server']['host'])
+
+
+## setting logging
+if args.backend:
+    LOGGING = args.logging
+elif config:
+    if config['logging']:
+        LOGGING = config['logging']
+
+
+## setting api version
+if args.version:
+    API_VERSION = args.version
+elif config:
+    if config['api_version']:
+        API_VERSION = str(config['api_version'])
 
 
 # auto configure the hostname
@@ -59,7 +108,7 @@ host = socket.gethostname()
 if host is not None:
     HOSTNAME = str(host).upper()
 
-MICA_SERVER_API = "{}/api/v{}/attack".format(MICA_SERVER_URL, API_VERSION)
+MICA_SERVER_API = "{}/api/{}/attack".format(MICA_SERVER_URL, API_VERSION)
 
 # create a list of running jobs
 running_jobs = []
@@ -121,7 +170,7 @@ def execute_shell_command(command, uuid):
 
 # registering the agent at the server
 def register_at_sever():
-    server_url = "{}/api/v{}/register".format(MICA_SERVER_URL, API_VERSION)
+    server_url = "{}/api/{}/register".format(MICA_SERVER_URL, API_VERSION)
     log(">> Registering the Agent at the MiCA-Server (at URL={})".format(server_url))
     req_url = "{}?victim={}".format(server_url, HOSTNAME)
     res = requests.post(req_url)
@@ -136,7 +185,7 @@ def register_at_sever():
 # notify the server that an attack has started
 def notify_attack_start(command, uuid):
     log("Notifying the Start of the Attack: {}".format(command, uuid))
-    server_url = "{}/api/v{}/attack/start".format(MICA_SERVER_URL, API_VERSION)
+    server_url = "{}/api/{}/attack/start".format(MICA_SERVER_URL, API_VERSION)
     res = requests.post(server_url, json={
         'hostName': HOSTNAME,
         'uuid': uuid,
@@ -147,7 +196,7 @@ def notify_attack_start(command, uuid):
 # notify the server that an attack has finished
 def notify_attack_end(uuid):
     log("Notifying the End of the Attack: {}".format(uuid))
-    server_url = "{}/api/v{}/attack/end".format(MICA_SERVER_URL, API_VERSION)
+    server_url = "{}/api/{}/attack/end".format(MICA_SERVER_URL, API_VERSION)
     res = requests.post(server_url, json={
         'hostName': HOSTNAME,
         'uuid': uuid,
@@ -179,7 +228,7 @@ def log(message, print_to_console=True):
 
 
 # now we know we are at a windows system
-log(">> Agent is up and running on a {} OS!!".format(platform))
+log(">> Agent is up and running on a {} OS!!".format(sys.platform))
 register_at_sever()
 
 # check the server for jobs
@@ -232,7 +281,7 @@ while True:
             if cmd:
                 # check if we are at a windows system or unix-based
                 log("Got a new Job! {}".format(cmd))
-                if platform == 'win32' or platform == 'cygwin':
+                if sys.platform == 'win32' or sys.platform == 'cygwin':
                     execute_powershell_command(cmd, uuid)
                 else:
                     execute_shell_command(cmd, uuid)
