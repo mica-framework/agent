@@ -41,13 +41,16 @@ HOSTNAME = "LOCALHOST"
 # Request-Delay
 POLLING_DELAY = 5
 
+# Path to the config file
+CONFIG_FILE_PATH = "./config.yml"
+
 # ===================== CONFIG ENDS HERE ===========================
 
 
 # if there are no arguments given, then just check if there's a config file
 def _load_config():
     try:
-        with open("./config.yml", 'r') as ymlfile:
+        with open(CONFIG_FILE_PATH, 'r') as ymlfile:
             yml = yaml.safe_load(ymlfile)
     except Exception as err:
         return None
@@ -56,16 +59,22 @@ def _load_config():
 
 # get arguments which can be given
 parser = argparse.ArgumentParser()
-parser.add_argument('-b', '--backend', action='store',
+parser.add_argument('-b', '--backend', action='store', default=None,
     help='The host address of the backend server e.g. http://127.0.0.1')
-parser.add_argument('-l', '--logging', action='store_true',
+parser.add_argument('-l', '--logging', action='store_true', default=False,
     help='Setting the logging to a local logfile')
-parser.add_argument('-v', '--version', action='store',
+parser.add_argument('-v', '--version', action='store', default=None,
     help='Setting API Version - Default Version is v1')
+parser.add_argument('-f', '--file', action='store', default=None,
+    help='The file path to the configuration config.yml file')
 args = parser.parse_args()
 
 
 # now set the environment variables
+## check for a given config file
+if args.file:
+    CONFIG_FILE_PATH = args.file
+
 ## setting backend
 if args.backend:
     MICA_SERVER_URL = str(args.backend)
