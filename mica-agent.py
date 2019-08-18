@@ -15,7 +15,6 @@
 # Andreas Zinkl
 # E-Mail: zinklandi@gmail.com
 # ================================================
-from sys import platform
 import sys
 import subprocess
 import shlex
@@ -90,7 +89,7 @@ LOGGING = args.logging
 
 ## setting api version
 if args.version:
-    API_VERSION = str(args.version)
+    API_VERSION = args.version
 else:
     config = _load_config()
     if config['api_version']:
@@ -164,7 +163,7 @@ def execute_shell_command(command, uuid):
 
 # registering the agent at the server
 def register_at_sever():
-    server_url = "{}/api/v{}/register".format(MICA_SERVER_URL, API_VERSION)
+    server_url = "{}/api/{}/register".format(MICA_SERVER_URL, API_VERSION)
     log(">> Registering the Agent at the MiCA-Server (at URL={})".format(server_url))
     req_url = "{}?victim={}".format(server_url, HOSTNAME)
     res = requests.post(req_url)
@@ -179,7 +178,7 @@ def register_at_sever():
 # notify the server that an attack has started
 def notify_attack_start(command, uuid):
     log("Notifying the Start of the Attack: {}".format(command, uuid))
-    server_url = "{}/api/v{}/attack/start".format(MICA_SERVER_URL, API_VERSION)
+    server_url = "{}/api/{}/attack/start".format(MICA_SERVER_URL, API_VERSION)
     res = requests.post(server_url, json={
         'hostName': HOSTNAME,
         'uuid': uuid,
@@ -190,7 +189,7 @@ def notify_attack_start(command, uuid):
 # notify the server that an attack has finished
 def notify_attack_end(uuid):
     log("Notifying the End of the Attack: {}".format(uuid))
-    server_url = "{}/api/v{}/attack/end".format(MICA_SERVER_URL, API_VERSION)
+    server_url = "{}/api/{}/attack/end".format(MICA_SERVER_URL, API_VERSION)
     res = requests.post(server_url, json={
         'hostName': HOSTNAME,
         'uuid': uuid,
@@ -222,7 +221,7 @@ def log(message, print_to_console=True):
 
 
 # now we know we are at a windows system
-log(">> Agent is up and running on a {} OS!!".format(platform))
+log(">> Agent is up and running on a {} OS!!".format(sys.platform))
 register_at_sever()
 
 # check the server for jobs
@@ -275,7 +274,7 @@ while True:
             if cmd:
                 # check if we are at a windows system or unix-based
                 log("Got a new Job! {}".format(cmd))
-                if platform == 'win32' or platform == 'cygwin':
+                if sys.platform == 'win32' or sys.platform == 'cygwin':
                     execute_powershell_command(cmd, uuid)
                 else:
                     execute_shell_command(cmd, uuid)
