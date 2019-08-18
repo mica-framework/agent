@@ -43,6 +43,9 @@ POLLING_DELAY = 5
 # Path to the config file
 CONFIG_FILE_PATH = "./config.yml"
 
+# logging to logfile
+LOGGING = False
+
 # ===================== CONFIG ENDS HERE ===========================
 
 
@@ -71,27 +74,31 @@ args = parser.parse_args()
 
 # now set the environment variables
 ## check for a given config file
+config = None
 if args.file:
     CONFIG_FILE_PATH = args.file
+config = _load_config()
 
 ## setting backend
 if args.backend:
     MICA_SERVER_URL = str(args.backend)
-else:
-    config = _load_config()
+elif config:
     if config['server']['host']:
         MICA_SERVER_URL = str(config['server']['host'])
 
 
 ## setting logging
-LOGGING = args.logging
+if args.backend:
+    LOGGING = args.logging
+elif config:
+    if config['logging']:
+        LOGGING = config['logging']
 
 
 ## setting api version
 if args.version:
     API_VERSION = args.version
-else:
-    config = _load_config()
+elif config:
     if config['api_version']:
         API_VERSION = str(config['api_version'])
 
